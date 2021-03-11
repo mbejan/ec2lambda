@@ -7,7 +7,16 @@ aws iam create-role --role-name lambda-ex --assume-role-policy-document '{"Versi
 
 
 #create ec2 policy
-echo '{  "Version": "2012-10-17",  "Statement": [    {      "Effect": "Allow",      "Action": [        "ec2:StartInstances",        "ec2:StopInstances"      ],      "Resource": "arn:aws:ec2:*:*:instance/*",      "Condition": {        "StringEquals": {          "ec2:ResourceTag/Owner": "${aws:username}"        }      }    },    {      "Effect": "Allow",      "Action": "ec2:DescribeInstances",      "Resource": "*"    }  ]}' > policy.json
+echo '{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "ec2:*",
+            "Resource": "*",
+            "Effect": "Allow"           
+        }
+    ]
+}' > policy.json
 
 aws iam create-policy --policy-name ec2_all --policy-document file://policy.json
 #you need the policy arn
@@ -29,11 +38,11 @@ zip -g lambda_function_package.zip lambda_function.py
 #delete
 aws lambda delete-function --function-name start_ec2
 #create
-aws lambda create-function --function-name start_ec2 --zip-file fileb://lambda_function_package.zip --handler lambda_function.lambda_handler --runtime python3.8 --role arn:aws:iam::445318494978:role/lambda-ex 
+aws lambda create-function --timeout 300 --function-name start_ec2 --zip-file fileb://lambda_function_package.zip --handler lambda_function.lambda_handler --runtime python3.8 --role arn:aws:iam::445318494978:role/lambda-ex 
 
 #update
 zip -g lambda_function_package.zip lambda_function.py; aws lambda update-function-code --function-name start_ec2 --zip-file fileb://lambda_function_package.zip 
 
 
 #invoke
-aws lambda invoke --cli-binary-format raw-in-base64-out --function-name start_ec2 --payload '{"instanceType": "t3.small"}' output.txt  --log-type Tail --query 'LogResult' --output text |  base64 -d
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name start_ec2 --payload '{"instanceType": "t2.medium"}' output.txt  --log-type Tail --query 'LogResult' --output text |  base64 -d
